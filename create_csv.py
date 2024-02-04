@@ -12,7 +12,7 @@ with open("json/InspectionsRestaurantFixed.json") as f:
 
     restaurant_data = []
     inspection_data = []
-    restaurant_inspection_data = []
+    inspections_restaurants_data = []
 
     # Loop through the data once
     for item in data:
@@ -29,17 +29,17 @@ with open("json/InspectionsRestaurantFixed.json") as f:
 
         # Create the combined data table
         combined = {**restaurant, **inspection}
-        restaurant_inspection_data.append(combined)
+        inspections_restaurants_data.append(combined)
 
     # Create the dataframes
     restaurant_df = pd.DataFrame(restaurant_data)
     inspection_df = pd.DataFrame(inspection_data)
-    restaurant_inspection_df = pd.DataFrame(restaurant_inspection_data)
+    inspections_restaurants_df = pd.DataFrame(inspections_restaurants_data)
 
     # Print the line count for each dataframe
     print(f"restaurant_df: {len(restaurant_df)} lines")
     print(f"inspection_df: {len(inspection_df)} lines")
-    print(f"restaurant_inspection_df: {len(restaurant_inspection_df)} lines")
+    print(f"inspections_restaurants_df: {len(inspections_restaurants_df)} lines")
 
     # Save the dataframes to csv files
     restaurant_df.to_csv(
@@ -71,8 +71,8 @@ with open("json/InspectionsRestaurantFixed.json") as f:
             "grade",
         ],
     )
-    restaurant_inspection_df.to_csv(
-        "csv/restaurant_inspections.csv",
+    inspections_restaurants_df.to_csv(
+        "csv/inspections_restaurants.csv",
         sep=";",
         index=False,
         columns=[

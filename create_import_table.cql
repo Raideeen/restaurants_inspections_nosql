@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS inspection (
     PRIMARY KEY (idRestaurant, inspectionDate)
 );
 
-CREATE TABLE restaurant_inspections (
+CREATE TABLE inspections_restaurants (
     idRestaurant INT,
     inspectionDate DATE,
     name TEXT,
@@ -54,5 +54,5 @@ FROM '/home/inspections_restaurant/restaurant.csv' WITH HEADER=TRUE AND DELIMITE
 COPY inspection (idRestaurant, inspectionDate, violationCode, violationDescription, criticalFlag, score, grade)
 FROM '/home/inspections_restaurant/inspection.csv' WITH HEADER=TRUE AND DELIMITER=';';
 
-COPY restaurant_inspections (idRestaurant, inspectionDate, name, borough, buildingnum, street, zipcode, phone, cuisineType, violationCode, violationDescription, criticalFlag, score, grade)
-FROM '/home/inspections_restaurant/restaurant_inspections.csv' WITH HEADER=TRUE AND DELIMITER=';';
+COPY inspections_restaurants (idRestaurant, inspectionDate, name, borough, buildingnum, street, zipcode, phone, cuisineType, violationCode, violationDescription, criticalFlag, score, grade)
+FROM '/home/inspections_restaurants/inspections_restaurants.csv' WITH HEADER=TRUE AND DELIMITER=';';
