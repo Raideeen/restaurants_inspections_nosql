@@ -2,11 +2,6 @@
 
 Made by: Adrien DJEBAR, Emma FROMAGER, Abdelhak HACIB, Ridge LOWAO, Alex ROUSSEL
 
-Problem :
-
-- Json objects aren't in an array
-- Json objects are not separated by a comma
-
 ## 1. Introduction to the dataset
 
 How to design schemas in NoSQL databases like Cassandra requires a different mindset compared to traditional SQL databases. In NoSQL, particularly in Cassandra, the schema design is heavily driven by the queries you need to perform.
@@ -45,14 +40,16 @@ Considering our dataset is of difficulty "2", we have to provide :
 
 We have to design a schema that can answer these queries that we'll be running most frequently. Two approaches can be taken to design the schema:
 
-- Single table design: All data in one table, which can simplify complex and hard queries that need to access both _restaurant_ and _inspection_ data simultaneously. However, this approach can make simple queries more complex and less efficient. In this approach, the "restaurant" dictionnary is denormalized so that we can access all the data in one table.
-- Multi-table design: Data is split into multiple tables, which can make simple queries more efficient. Two tables are created, one for _restaurants_ which will hold all the relevent data about the restaurant, and one for _inspections_ which will hold all the relevant data about the inspection of the said restaurant. Since in CQL, we can't perform JOINs, we have to perform two queries to get the data we need. This approach can make complex and hard queries more complex and less efficient.
+- Multi-table design: Data is split into multiple tables, which can make simple queries more efficient. Two tables are created, one for _restaurants_ which will hold all the relevant data about the restaurants, and one for _inspections_ which will hold all the relevant data about the inspection of the said restaurants. Since in CQL there is no JOIN operation, if we would like to do queries that require data from both tables, we would need materialized views or create a third table that would hold the data from both tables.
+
+- Single table design: All data in one table, which can simplify complex and hard queries that need to access both _restaurant_ and _inspection_ data simultaneously. However, this approach can make simple queries more complex and less efficient. In this approach, the "restaurant" dictionary is denormalized so that we can access all the data in one table.
 
 But what if we could have the best of both worlds ? We can use a multi-table design for simple queries, and a single table design for complex and hard queries. This way, we can have the best performance for all our queries. We can also use a materialized view to have the best of both worlds, but we'll have to see if it's necessary. NoSQL databases are more of a iterative process than SQL databases, so we'll have to see how our queries perform and adjust our schema accordingly.
 
 ## 2. Designing the schema
 
-Let's take a closer look at how our dataset is structured. For each row, we can separate the data into two parts: the restaurant data and the inspection data. The inspection data hold the date of when the inspection happened, the violation code, a description, a critical flag, a score and a grade. While, the restaurant hold some information that aren't directly related to the inspection, like the name, the borough, the building number, the street, the zipcode, the phone number and the cuisine type. So it seems reasonable either way to split the data into two tables or to "flatten" the "restaurant" dictionnary into it's elements.
+Let's take a closer look at how our dataset is structured. For each row, we can separate the data into two parts: the restaurant data and the inspection data.
+The inspection data hold the date of when the inspection happened, the violation code, a description, a critical flag, a score and a grade. While, the restaurant hold some information that aren't directly related to the inspection, like the name, the borough, the building number, the street, the zipcode, the phone number and the cuisine type. So it seems reasonable either way to split the data into two tables or to "flatten" the "restaurant" dictionary into it's elements.
 
 ```json
 [
@@ -106,7 +103,7 @@ CREATE TABLE IF NOT EXISTS inspection (
 );
 ```
 
-Both tables have "idRestaurant" as the partition key, which is the unique identifier for each restaurant. This way, we keep a relationship between the two tables. The "inspection" table has "inspectionDate" as the clustering column, which will allow us to sort the data by date. This way, we can easily query the data by date.
+Both tables have "idRestaurant" as the partition key, which is the unique identifier for each restaurant. This way, we keep a relationship between the two tables. The "inspection" table has "inspectionDate" as the clustering column, which will allow us to sort the data by date.
 
 ### 2.2 Single table design
 
@@ -152,7 +149,7 @@ CREATE MATERIALIZED VIEW restaurant_inspection_combined_mv AS
 
 ### 3.1 Cleaning the JSON file
 
-Before we can import the data into Cassandra, we have to clean the JSON file. The JSON file is not in a format that Cassandra can understand. The JSON objects are not in an array, and they are not separated by a comma. We have to convert the JSON file into a format that Cassandra can understand.
+Before we can import the data into Cassandra, we have to clean the JSON file. The JSON file is not in a format that Cassandra can understand. However, our JSON objects are not in an array, and they are not separated by commas.
 
 For this, we created a simple Python script to add the missing commas and to put the JSON objects into an array. Here's the script:
 
@@ -164,20 +161,24 @@ If we compare the line count of the original file and the cleaned file with "wc 
 
 ### 3.2 Converting the JSON file to CSV
 
-Cassandra can't import JSON files directly, so we have to convert the JSON file to a CSV file. We can use the `pandas` library to do this. We can create a efficient python script that loops only once through the JSON file to convert it to a CSV file.
+To efficiently convert the JSON file to CSV, we can use the library `pandas` in Python to create dataframes that enable to work with the data in a more structured way. We can then save the dataframes to CSV files. Here's the script:
 
 ```python
 import json
+import os
 
 import pandas as pd
 
+# Create the data directory if it does not exist
+os.makedirs("csv", exist_ok=True)
+
 # Read the json file
-with open("InspectionsRestaurantFixed.json") as f:
+with open("json/InspectionsRestaurantFixed.json") as f:
     data = json.load(f)
 
     restaurant_data = []
     inspection_data = []
-    restaurant_inspection_data = []
+    inspections_restaurants_data = []
 
     # Loop through the data once
     for item in data:
@@ -194,21 +195,21 @@ with open("InspectionsRestaurantFixed.json") as f:
 
         # Create the combined data table
         combined = {**restaurant, **inspection}
-        restaurant_inspection_data.append(combined)
+        inspections_restaurants_data.append(combined)
 
     # Create the dataframes
     restaurant_df = pd.DataFrame(restaurant_data)
     inspection_df = pd.DataFrame(inspection_data)
-    restaurant_inspection_df = pd.DataFrame(restaurant_inspection_data)
+    inspections_restaurants_df = pd.DataFrame(inspections_restaurants_data)
 
     # Print the line count for each dataframe
     print(f"restaurant_df: {len(restaurant_df)} lines")
     print(f"inspection_df: {len(inspection_df)} lines")
-    print(f"restaurant_inspection_df: {len(restaurant_inspection_df)} lines")
+    print(f"inspections_restaurants_df: {len(inspections_restaurants_df)} lines")
 
     # Save the dataframes to csv files
     restaurant_df.to_csv(
-        "restaurant.csv",
+        "csv/restaurant.csv",
         sep=";",
         index=False,
         columns=[
@@ -223,7 +224,7 @@ with open("InspectionsRestaurantFixed.json") as f:
         ],
     )
     inspection_df.to_csv(
-        "inspection.csv",
+        "csv/inspection.csv",
         sep=";",
         index=False,
         columns=[
@@ -236,8 +237,8 @@ with open("InspectionsRestaurantFixed.json") as f:
             "grade",
         ],
     )
-    restaurant_inspection_df.to_csv(
-        "restaurant_inspection.csv",
+    inspections_restaurants_df.to_csv(
+        "csv/inspections_restaurants.csv",
         sep=";",
         index=False,
         columns=[
@@ -355,4 +356,49 @@ FROM '/home/inspections_restaurant/inspection.csv' WITH HEADER=TRUE AND DELIMITE
 
 COPY restaurant_inspections (idRestaurant, inspectionDate, name, borough, buildingnum, street, zipcode, phone, cuisineType, violationCode, violationDescription, criticalFlag, score, grade)
 FROM '/home/inspections_restaurant/restaurant_inspections.csv' WITH HEADER=TRUE AND DELIMITER=';';
+```
+
+### 3.4 Automating the process
+
+We can automate the process of importing the data into Cassandra by creating a shell script that does all the steps for us. First clone the [GitHub repository](https://github.com/Raideeen/restaurants_inspections_nosql) and execute the `execute_pipeline.sh` script:
+
+```bash
+#!/bin/bash
+
+# Prompt the user for the Docker image name
+echo "Please enter the Docker image name for Cassandra:"
+read docker_name
+
+# Check if the Docker image name is empty
+if [ -z "$docker_name" ]; then
+    echo "No Docker image name provided. Exiting."
+    exit 1
+fi
+
+echo "Executing pipeline for Cassandra..."
+
+echo -e "[INFO] Correcting array comma in json file..."
+python fix_array_comma.py
+echo -e "[INFO] Done! ✔️"
+
+echo -e "\n[INFO] Creating csv files from json for Cassandra readable files..."
+python create_csv.py
+echo -e "[INFO] Done! ✔️"
+
+echo -e "\n[INFO] Compressing csv files to tar.gz for transfer in the docker..."
+(cd csv && tar -czvf ../inspections_restaurants.tar.gz *)
+
+echo -e "\n[INFO] Copying tar.gz file and script to docker..."
+docker cp inspections_restaurants.tar.gz $docker_name:/home
+docker cp create_import_table.cql $docker_name:/home
+
+echo -e "\n[INFO] Extracting tar.gz file in docker..."
+docker exec -it $docker_name mkdir /home/inspections_restaurants
+docker exec -it $docker_name tar -xzvf /home/inspections_restaurants.tar.gz -C /home/inspections_restaurants
+
+echo -e "\n[INFO] Creating Cassandra tables and import data..."
+docker exec -it $docker_name cqlsh -f /home/create_import_table.cql
+echo -e "[INFO] Done! ✔️"
+
+echo -e "\n[INFO] Executing pipeline... Done! ✔️"
 ```
