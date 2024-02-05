@@ -49,10 +49,10 @@ CREATE TABLE inspections_restaurants (
 
 -- Import the data into the table.
 COPY restaurant (idRestaurant, name, borough, buildingnum, street, zipcode, phone, cuisineType) 
-FROM '/home/inspections_restaurant/restaurant.csv' WITH HEADER=TRUE AND DELIMITER=';';
+FROM '/home/inspections_restaurants/restaurant.csv' WITH HEADER=TRUE AND DELIMITER=';';
 
 COPY inspection (idRestaurant, inspectionDate, violationCode, violationDescription, criticalFlag, score, grade)
-FROM '/home/inspections_restaurant/inspection.csv' WITH HEADER=TRUE AND DELIMITER=';';
+FROM '/home/inspections_restaurants/inspection.csv' WITH HEADER=TRUE AND DELIMITER=';';
 
 COPY inspections_restaurants (idRestaurant, inspectionDate, name, borough, buildingnum, street, zipcode, phone, cuisineType, violationCode, violationDescription, criticalFlag, score, grade)
 FROM '/home/inspections_restaurants/inspections_restaurants.csv' WITH HEADER=TRUE AND DELIMITER=';';
