@@ -23,7 +23,9 @@ with open("json/InspectionsRestaurantFixed.json") as f:
 
         # Create the inspection data table
         inspection = {
-            k: v if v != "" else "Empty" for k, v in item.items() if k != "restaurant"
+            k: v if v != "" else "Not Yet Graded"
+            for k, v in item.items()
+            if k != "restaurant"
         }
         inspection_data.append(inspection)
 
