@@ -482,3 +482,63 @@ SELECT idRestaurant, name, COUNT(inspectionDate) AS num_inspections FROM inspect
 We can see something interesting. Indeed, the number of inspections for "bad restaurants" (because they have a C mark) is generally equal to 1. This is interesting because we would expect a "bad restaurant" to have more inspections than a "good restaurant". This is a good example of how the data can be misleading.
 
 ## 4.3 Hard query
+
+- Creation of the state function
+
+```sql
+CREATE OR REPLACE FUNCTION avgState(state tuple<int, int>, val int)
+CALLED ON NULL INPUT RETURNS tuple<int, int> LANGUAGE java AS '
+if (val != null) {
+    state.setInt(0, state.getInt(0) + val);
+    state.setInt(1, state.getInt(1) + 1);
+}
+return state;';
+```
+
+![Screenshot of the query "Creation of the state function"](_Images/hard_uda_function.png)
+
+- Creation of the final function to calculate the average
+
+```sql
+CREATE OR REPLACE FUNCTION avgFinal(state tuple<int, int>)
+CALLED ON NULL INPUT RETURNS double
+LANGUAGE java AS '
+int sum = state.getInt(0);
+int count = state.getInt(1);
+return (double) sum / count;
+';
+```
+
+![Screenshot of the query "Creation of the state function"](_Images/hard_avg_normal.png)
+
+- Creation of the UDA function
+
+```sql
+CREATE OR REPLACE AGGREGATE average ( int )
+SFUNC avgState STYPE tuple<int,int>
+FINALFUNC avgFinal INITCOND (0,0);
+```
+
+- We display the average score of each restaurant using our newly created UDA function "average"
+
+```sql
+SELECT idrestaurant, average(score) AS total_score
+FROM restaurant_inspections
+GROUP BY idrestaurant;
+```
+
+- We do the same but this time using the included aggregate function "AVG"
+
+```sql
+SELECT idrestaurant, AVG(score) AS avg_score
+FROM restaurant_inspections
+GROUP BY idrestaurant;
+```
+
+At first, we can see that using our UDA function "average", we achieve better results leading us to believe that UDA functions would be the go too if we need precision. But that precision comes with a price. If we compare the time it takes for each query to run and return results, a huge gap in compute time is visible between our UDA function and the onboard aggregate function.
+
+## 5. Conclusion
+
+In conclusion, we have successfully imported the data into Cassandra and ran the queries. We have designed the schema using a multi-table design and a single table design and automated the process of importing the data into Cassandra. We have run simple, complex and hard queries to pratice and better understand CQL as a whole.
+
+Thanks for reading! 🚀
