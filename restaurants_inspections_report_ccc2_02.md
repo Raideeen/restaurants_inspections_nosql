@@ -457,7 +457,7 @@ SELECT idRestaurant, name, inspectionDate FROM inspections_restaurants WHERE nam
 
 ![Screenshot of the query "Display the inspection dates for a specific restaurant named `SPRING`"](_Images/simple_spring.png)
 
-- Grandes and scores: We want to see the relationship between grades and scores.
+- Grades and scores: We want to see the relationship between grades and scores.
 
 ```sql
 SELECT score, grade
