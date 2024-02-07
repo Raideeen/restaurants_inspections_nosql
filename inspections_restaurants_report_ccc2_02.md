@@ -397,23 +397,40 @@ Now that we have imported the data into Cassandra, we can run the queries.
 
 ### 4.1 Simple queries
 
-- List of Starbucks restaurant.
+Let's do a simple query. We want to list all the restaurant which serves American cuisine. However, something interesting is going to happen.
 
 ```sql
-CREATE INDEX ON restaurant (name);
-SELECT * FROM restaurant where name='STARBUCKS';
+SELECT * FROM restaurant WHERE name='American';
 ```
 
-![Screenshot of the query "List of Starbucks restaurant"](_Images/simple_starbucks.png)
+![Screenshot of query not working without ALLOW FILTERING](_Images/simple_cuisinetype_not_working.png)
 
-- The type of cooking present on Broadway street.
+Without `ALLOW FILTERING`, we can't run the query. This is because we are trying to filter on a non-primary key column. We can fix this by creating an index on the `cuisineType` column. But why is this happening? This is because `ALLOW FILTERING` does a `BROADCAST` operation to all the nodes in the cluster, to query all the data in the table. To prevent this, we can create an index on the column we want to filter on, allowing to put all the relevant data on the same node. This way, the query with an exact match (i.e where `cuisineType='American'`) will be faster ! 😊
+
+Now that we have created the index, we can run the query again.
 
 ```sql
-CREATE INDEX ON restaurant (street);
-SELECT cuisinetype, name FROM restaurant WHERE street='BROADWAY';
+CREATE INDEX ON restaurant (cuisinetype);
+SELECT * FROM restaurant WHERE cuisinetype='American';
 ```
 
-![Screenshot of the query "The type of cooking present on Broadway street"](_Images/simple_type_of_cooking.png)
+![Screenshot of query working with an INDEX](_Images/simple_cuisinetype_working.png)
+
+One thing to consider is that creating an index can be expensive in terms of storage and performance. It's a trade-off between storage and performance. We have to consider the size of the data and the number of queries we are going to run. If we are going to run a lot of queries that filter on the `cuisineType` column, then it might be worth it to create an index or a table/materialized view that has the `cuisineType` as the partition key.
+
+- Now, what if we want to see all the restaurants with a score greater than 20? We could create an index on the `score` column, just like before ..? But we can't. Why ? Actually, non-matching query like ">=", "<=", ">", "<" still requires to use `ALLOW FILTERING` because Cassandra still have to filter and then `BROADCAST`.
+
+```sql
+SELECT * FROM inspections_restaurants WHERE score > 20;
+```
+
+![Screenshot of the query without ALLOW FILTERING with greater aggregate](_Images/simple_greater_non_filtering.png)
+
+```sql
+SELECT * FROM inspections_restaurants WHERE score > 20 ALLOW FILTERING;
+```
+
+![Screenshot of the query with ALLOW FILTERING with greater aggregate](_Images/simple_greater_with_filtering.png)
 
 - The grades of indian restaurants.
 
