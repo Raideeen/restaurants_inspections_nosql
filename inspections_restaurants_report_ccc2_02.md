@@ -424,15 +424,13 @@ SELECT idrestaurant, name, cuisinetype, grade, score FROM inspections_restaurant
 
 ![Screenshot of the query "The grades of indian restaurants"](_Images/simple_grade_indian_restaurant.png)
 
-- Restaurant with `A` grade after their last inspection.
+- Show the score and grade with the violation description for each restaurant. It might be interesting to see if there is a correlation between the grade and the score.
 
 ```sql
-CREATE INDEX ON inspections_restaurants (grade);
-SELECT idrestaurant, name, cuisinetype, MAX(inspectionDate) AS last_inspection_date, grade FROM inspections_restaurants
-WHERE grade = 'A' GROUP BY idrestaurant;
+SELECT  name, violationdescription, score, grade FROM inspections_restaurants;
 ```
 
-![Screenshot of the query "Restaurant with `A` grade after their last inspection"](_Images/simple_a_grade.png)
+![Screenshot of the query "Show the score and grade with the violation description for each restaurant"](_Images/simple_correlation_grade_violation.png)
 
 - Display the inspection dates for a specific restaurant named `SPRING`.
 
@@ -450,7 +448,7 @@ SELECT score, grade
 FROM inspections_restaurants;
 ```
 
-![Screenshot of the query "Grandes and scores: We want to see the relationship between grades and scores"](_Images/simple_grades_scores.png)
+![Screenshot of the query "Grandes and scores: We want to see the relationship between grades and scores"](_Images/simple_grade_score_relationship.png)
 
 We can see that a grade of A generally correlates with a low score, B is in between and C generally correlates with a high score (bad).
 
