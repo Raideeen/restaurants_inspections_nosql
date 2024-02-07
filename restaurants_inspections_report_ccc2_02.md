@@ -457,6 +457,17 @@ SELECT idRestaurant, name, inspectionDate FROM inspections_restaurants WHERE nam
 
 ![Screenshot of the query "Display the inspection dates for a specific restaurant named `SPRING`"](_Images/simple_spring.png)
 
+- Grandes and scores: We want to see the relationship between grades and scores.
+
+```sql
+SELECT score, grade
+FROM inspections_restaurants;
+```
+
+![Screenshot of the query "Grandes and scores: We want to see the relationship between grades and scores"](_Images/simple_grades_scores.png)
+
+We can see that a grade of A generally correlates with a low score, B is in between and C generally correlates with a high score (bad).
+
 ## 4.2 Complex queries
 
 - Display the name and the grade of restaurants that have a `criticalFlag` set to `Critical`.
