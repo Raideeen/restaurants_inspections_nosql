@@ -507,8 +507,6 @@ if (val != null) {
 return state;';
 ```
 
-![Screenshot of the query "Creation of the state function"](_Images/hard_uda_function.png)
-
 - Creation of the final function to calculate the average
 
 ```sql
@@ -520,8 +518,6 @@ int count = state.getInt(1);
 return (double) sum / count;
 ';
 ```
-
-![Screenshot of the query "Creation of the state function"](_Images/hard_avg_normal.png)
 
 - Creation of the UDA function
 
@@ -539,6 +535,8 @@ FROM restaurant_inspections
 GROUP BY idrestaurant;
 ```
 
+![Screenshot of the query "Creation of the state function"](_Images/hard_uda_function.png)
+
 - We do the same but this time using the included aggregate function "AVG"
 
 ```sql
@@ -546,6 +544,8 @@ SELECT idrestaurant, AVG(score) AS avg_score
 FROM restaurant_inspections
 GROUP BY idrestaurant;
 ```
+
+![Screenshot of the query "Creation of the state function"](_Images/hard_avg_normal.png)
 
 At first, we can see that using our UDA function "average", we achieve better results leading us to believe that UDA functions would be the go too if we need precision. But that precision comes with a price. If we compare the time it takes for each query to run and return results, a huge gap in compute time is visible between our UDA function and the onboard aggregate function.
 
